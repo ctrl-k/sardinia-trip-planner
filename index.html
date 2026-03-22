@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sardinia July 2026 — Trip Planner</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root {
+  --navy: #1a2744;
+  --ocean: #2c5f8a;
+  --ocean-light: #3a7ab5;
+  --teal: #0d9488;
+  --coral: #e8614d;
+  --sand: #d4a853;
+  --purple: #7c3aed;
+  --slate: #475569;
+  --light-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; color: var(--text); background: var(--light-bg); line-height: 1.6; }
+
+/* ── Navigation ── */
+.top-nav {
+  position: sticky; top: 0; z-index: 1000;
+  background: var(--navy); color: white;
+  display: flex; align-items: center; gap: 32px;
+  padding: 0 32px; height: 56px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.top-nav .logo { font-weight: 700; font-size: 16px; letter-spacing: -0.02em; white-space: nowrap; }
+.top-nav .logo span { color: var(--sand); }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 6px; transition: all 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: white; background: rgba(255,255,255,0.1); }
+
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #1e3a5f 50%, var(--ocean) 100%);
+  color: white; padding: 64px 32px 56px; text-align: center;
+}
+.hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+.hero .subtitle { font-size: 16px; color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto; }
+.hero-chips {
+  display: flex; gap: 8px; justify-content: center; margin-top: 20px; flex-wrap: wrap;
+}
+.hero-chip {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85);
+}
+
+/* ── Section containers ── */
+.section { padding: 56px 32px; max-width: 1200px; margin: 0 auto; }
+.section-alt { background: white; }
+.section h2 {
+  font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px;
+}
+.section .section-desc { color: var(--text-muted); font-size: 15px; margin-bottom: 32px; }
+
+/* ── Map ── */
+.map-wrapper { border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+#main-map { width: 100%; height: 560px; }
+.map-legend {
+  background: white; padding: 14px 18px; display: flex; gap: 20px; flex-wrap: wrap;
+  border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-symbol {
+  width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: white; font-weight: 700; flex-shrink: 0;
+}
+
+/* ── Dive sites ── */
+.dive-cluster-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+.dive-cluster-tab {
+  padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 2px solid var(--border); background: white; color: var(--text-muted);
+  transition: all 0.2s;
+}
+.dive-cluster-tab:hover { border-color: var(--ocean); color: var(--ocean); }
+.dive-cluster-tab.active-tavolara { border-color: var(--purple); background: var(--purple); color: white; }
+.dive-cluster-tab.active-maddalena { border-color: var(--coral); background: var(--coral); color: white; }
+.dive-cluster-tab.active-costav { border-color: var(--teal); background: var(--teal); color: white; }
+
+.dive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.dive-card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px; box-shadow: var(--shadow); transition: box-shadow 0.2s;
+}
+.dive-card:hover { box-shadow: var(--shadow-lg); }
+.dive-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.dive-card .dive-meta { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.dive-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; color: white;
+}
+.tag-depth { background: var(--ocean); }
+.tag-type-wreck { background: #b45309; }
+.tag-type-seamount { background: var(--purple); }
+.tag-type-cave { background: var(--slate); }
+.tag-type-reef { background: var(--teal); }
+.tag-advanced { background: var(--coral); }
+.tag-technical { background: #dc2626; }
+.dive-card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+/* ── Hotels ── */
+.hotel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+.hotel-card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; box-shadow: var(--shadow); transition: all 0.2s; position: relative;
+}
+.hotel-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.hotel-card-header {
+  padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+}
+.hotel-card-header h4 { font-size: 17px; font-weight: 700; margin-bottom: 2px; padding-right: 8px; }
+.hotel-card-header .hotel-stars { font-size: 13px; color: var(--sand); letter-spacing: 1px; display: block; margin-bottom: 2px; }
+.hotel-card-header .hotel-loc { font-size: 12px; color: var(--text-muted); }
+.hotel-card-body { padding: 16px 20px 20px; }
+.hotel-stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.hotel-stat-row:last-child { border-bottom: none; }
+.hotel-stat-label { color: var(--text-muted); }
+.hotel-stat-value { font-weight: 600; }
+.hotel-price { font-size: 18px; font-weight: 700; color: var(--ocean); margin-top: 12px; }
+.hotel-price span { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.hotel-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 5px;
+  font-size: 11px; font-weight: 700; color: white; margin-bottom: 6px;
+}
+.badge-tavolara { background: var(--purple); }
+.badge-maddalena { background: var(--coral); }
+.badge-iconic { background: var(--sand); color: var(--navy); }
+.badge-value { background: var(--teal); }
+.badge-confirmed { background: var(--teal); }
+.badge-alternative { background: var(--slate); }
+.hotel-link {
+  display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 600;
+  color: var(--ocean); text-decoration: none;
+}
+.hotel-link:hover { text-decoration: underline; }
+
+/* ── Itinerary ── */
+.itin-controls {
+  display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; align-items: center;
+}
+.itin-controls label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.itin-select {
+  padding: 8px 14px; border-radius: 8px; border: 2px solid var(--border); font-size: 13px;
+  font-weight: 600; background: white; color: var(--text); cursor: pointer; min-width: 200px;
+}
+.itin-select:focus { outline: none; border-color: var(--ocean); }
+
+.itin-overview {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 28px;
+}
+.itin-stat {
+  background: white; border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; text-align: center;
+}
+.itin-stat .stat-value { font-size: 20px; font-weight: 700; color: var(--ocean); }
+.itin-stat .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+.day-timeline { position: relative; padding-left: 36px; }
+.day-timeline::before {
+  content: ''; position: absolute; left: 15px; top: 0; bottom: 0;
+  width: 2px; background: var(--border);
+}
+.day-block { position: relative; margin-bottom: 24px; }
+.day-dot {
+  position: absolute; left: -36px; top: 4px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--ocean); color: white;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+}
+.day-dot.dive-day { background: var(--teal); }
+.day-dot.travel-day { background: var(--sand); }
+.day-block h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.day-block .day-date { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.day-block .day-hotel { font-size: 12px; color: var(--ocean); font-weight: 600; margin-bottom: 6px; }
+.day-activities { list-style: none; }
+.day-activities li {
+  font-size: 13px; color: var(--slate); padding: 3px 0; padding-left: 16px; position: relative;
+}
+.day-activities li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--border);
+}
+.day-activities li.dive-activity::before { background: var(--teal); }
+.day-activities li.travel-activity::before { background: var(--sand); }
+
+/* ── Itinerary map ── */
+.itin-map-wrapper { margin-top: 28px; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+#itin-map { width: 100%; height: 400px; }
+
+/* ── Flights ── */
+.flights-table {
+  width: 100%; border-collapse: collapse; background: white; border-radius: 10px;
+  overflow: hidden; box-shadow: var(--shadow); margin-top: 16px;
+}
+.flights-table th {
+  background: var(--navy); color: white; padding: 10px 16px; font-size: 12px;
+  font-weight: 600; text-align: left;
+}
+.flights-table td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+.flights-table tr:last-child td { border-bottom: none; }
+.flights-table tr:hover td { background: #f8fafc; }
+
+/* ── Info callout ── */
+.info-callout {
+  background: #eff6ff; border-left: 4px solid var(--ocean); border-radius: 0 8px 8px 0;
+  padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: var(--text);
+}
+.info-callout strong { color: var(--ocean); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .top-nav { padding: 0 16px; gap: 16px; }
+  .nav-links a { padding: 6px 10px; font-size: 12px; }
+  .hero { padding: 40px 16px 36px; }
+  .hero h1 { font-size: 26px; }
+  .section { padding: 40px 16px; }
+  .hotel-grid, .dive-grid { grid-template-columns: 1fr; }
+  #main-map, #itin-map { height: 400px; }
+  .itin-overview { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="top-nav">
+  <div class="logo">Sardinia <span>July 2026</span></div>
+  <div class="nav-links">
+    <a href="#map" class="active">Map</a>
+    <a href="#dive-sites">Dive Sites</a>
+    <a href="#hotels">Hotels</a>
+    <a href="#itinerary">Itinerary</a>
+    <a href="#flights">Flights</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Sardinia Trip Planner</h1>
+  <p class="subtitle">Jamie, Martine, Alex & family — 5–6 nights exploring Sardinia's wild coast and world-class diving</p>
+  <div class="hero-chips">
+    <span class="hero-chip">July 6–12, 2026</span>
+    <span class="hero-chip">2–3 Hotels</span>
+    <span class="hero-chip">Advanced Scuba (Jamie + Alex)</span>
+    <span class="hero-chip">Martine + kids → Malta</span>
+    <span class="hero-chip">Jamie → London</span>
+  </div>
+</div>
+
+<!-- ═══════════════ MAP SECTION ═══════════════ -->
+<div id="map" class="section">
+  <h2>Interactive Map</h2>
+  <p class="section-desc">All hotels, dive sites, operators, and airports. Click any marker for details.</p>
+  <div class="map-wrapper">
+    <div id="main-map"></div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-symbol" style="background:var(--ocean);border-radius:4px;">H</div> Hotels</div>
+      <div class="legend-item"><div class="legend-symbol" style="background:var(--purple);border-radius:0;clip-path:polygon(50% 0%, 100% 100%, 0% 100%);">  </div> Tavolara dives</div>
+      <div class="legend-item"><div class="legend-symbol" style="background:var(--coral);border-radius:0;clip-path:polygon(50% 0%, 100% 100%, 0% 100%);">  </div> Maddalena dives</div>
+      <div class="legend-item"><div class="legend-symbol" style="background:var(--teal);border-radius:0;clip-path:polygon(50% 0%, 100% 100%, 0% 100%);">  </div> Costa Verde dives</div>
+      <div class="legend-item"><div class="legend-symbol" style="background:#16a34a;border-radius:50%;">D</div> Dive operators</div>
+      <div class="legend-item"><div class="legend-symbol" style="background:var(--slate);border-radius:0;transform:rotate(45deg);width:14px;height:14px;">  </div> Airports</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DIVE SITES SECTION ═══════════════ -->
+<div id="dive-sites" class="section section-alt">
+  <h2>Dive Sites</h2>
+  <p class="section-desc">Advanced-certified sites accessible from Sardinia's three dive clusters. Jamie + Alex (both Advanced OW).</p>
+
+  <div class="dive-cluster-tabs">
+    <button class="dive-cluster-tab active-tavolara" onclick="showDiveCluster('tavolara', this)">Tavolara MPA</button>
+    <button class="dive-cluster-tab" onclick="showDiveCluster('maddalena', this)">Maddalena Archipelago</button>
+    <button class="dive-cluster-tab" onclick="showDiveCluster('costav', this)">Costa Verde</button>
+  </div>
+
+  <div id="dive-panel-tavolara" class="dive-grid">
+    <div class="dive-card">
+      <h4>Secca del Papa 1</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">15–33m</span>
+        <span class="dive-tag tag-type-seamount">Seamount</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>Consistently rated the finest dive site in the Mediterranean. Limestone pinnacles rising from a 40m seabed, covered in giant red and yellow gorgonian fans. Huge grouper, clouds of damselfish, barracuda, and jacks. Multiple route options around the main ledge.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Secca del Papa 2</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">28–45m</span>
+        <span class="dive-tag tag-type-seamount">Seamount</span>
+        <span class="dive-tag tag-advanced">Deep / Nitrox rec'd</span>
+      </div>
+      <p>Deeper extension of Papa 1. Features rare yellow-and-red bicolor gorgonians found almost nowhere else. Mobula rays, Mediterranean moray eels, yellow cluster anemones. Strong currents possible — experienced advanced divers only.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Relitto di Molara (Oued Yquem)</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">30–36m</span>
+        <span class="dive-tag tag-type-wreck">Wreck</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>230-ft WWII cargo vessel sunk by Dutch submarine O21 in 1941. Largely intact — the wreck looms out of the blue as you descend. Giant grouper and European conger eels inside. Saddled sea bream, red mullet, and snapper schools outside.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Relitto Omega</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">~30m</span>
+        <span class="dive-tag tag-type-wreck">Wreck</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>Wreck dive accessible to advanced recreational divers. Part of Tavolara Diving Center's extensive wreck catalog in the marine protected area.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Relitto Chrisso</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">~30m</span>
+        <span class="dive-tag tag-type-wreck">Wreck</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>Third named wreck in the Tavolara catalog. Three wrecks within close range makes for excellent multi-dive day planning.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Il Grottone</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">Variable</span>
+        <span class="dive-tag tag-type-cave">Cave / Grotto</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>Large cave and grotto system off Tavolara island. Swim-throughs, cavern formations, and abundant marine life in the sheltered overhangs.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Secca delle Ancore</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">Variable</span>
+        <span class="dive-tag tag-type-reef">Reef</span>
+      </div>
+      <p>"Anchor reef" — named for historical anchor finds. Part of the 26+ recreational dive sites offered by Tavolara Diving Center.</p>
+    </div>
+    <div class="dive-card" style="border: 2px solid var(--purple); background: #faf5ff;">
+      <h4>Operator: Tavolara Diving Center</h4>
+      <div class="dive-meta">
+        <span class="dive-tag" style="background:#16a34a">Porto San Paolo</span>
+      </div>
+      <p><strong>Est. 1985 · 3 boats (capacity 36) · 26+ sites</strong><br>Certifications: PADI, TDI, TECREC, CMAS, SDI. Technical diving, Nitrox, rebreather try-outs. Discovered the "Lobster Wreck" at 75m. Phone: +39 0789 40360. Book in advance for July.</p>
+    </div>
+  </div>
+
+  <div id="dive-panel-maddalena" class="dive-grid" style="display:none">
+    <div class="dive-card">
+      <h4>Lavezzi / "Grouper City"</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">24–30m</span>
+        <span class="dive-tag tag-type-reef">Reef</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>Enormous, friendly grouper that follow divers for the entire dive — a truly unique experience. Also abundant snapper, sea bass, jacks, and barracuda schools. Located in the Bocche di Bonifacio National Park between Sardinia and Corsica.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Secca di Washington</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">6–30m</span>
+        <span class="dive-tag tag-type-reef">Reef</span>
+      </div>
+      <p>Located in the channel between Spargi and Budelli islands. Three different routes including a classic loop around the main ledge. Rich in passages among rocks and small caves. Suitable for a range of experience levels.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Becu Caves</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">Variable</span>
+        <span class="dive-tag tag-type-cave">Cave System</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>A veritable maze of passages and tunnels. Narrow corridors, caverns, and swim-throughs offering a unique navigation challenge. Advanced orientation skills required.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Clan Ogilvie Wreck</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">52m</span>
+        <span class="dive-tag tag-type-wreck">Wreck</span>
+        <span class="dive-tag tag-technical">TECHNICAL</span>
+      </div>
+      <p>1882 English vessel (Stephen & Sons), sank in 1888. Completely covered in sponges and gorgonians. Grouper, snapper, lobsters, morays. <strong>Beyond recreational limits — technical diving certification required. Not suitable for Alex.</strong></p>
+    </div>
+    <div class="dive-card">
+      <h4>Loredan Wreck</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">~30m</span>
+        <span class="dive-tag tag-type-wreck">Wreck</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>WWII Italian cruiser sunk by torpedoes from submarine HMS Safari in 1943. One of the most beautiful shipwrecks in the Mediterranean. Largely intact except for torpedo damage.</p>
+    </div>
+    <div class="dive-card" style="border: 2px solid var(--coral); background: #fef2f2;">
+      <h4>Operator: Nautilus Diving Center</h4>
+      <div class="dive-meta">
+        <span class="dive-tag" style="background:#16a34a">Palau</span>
+      </div>
+      <p><strong>PADI 5-Star Resort · Est. 1994 · 2 boats · 40+ sites</strong><br>Covers all Maddalena Archipelago, Palau, and Lavezzi/Corsica sites. TECREC technical diving, Nitrox. Small groups, advanced safety (emergency O2, first aid). Book well in advance for July.</p>
+    </div>
+  </div>
+
+  <div id="dive-panel-costav" class="dive-grid" style="display:none">
+    <div class="dive-card">
+      <h4>Piscinas Shipwreck</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">~15–20m</span>
+        <span class="dive-tag tag-type-wreck">Wreck</span>
+      </div>
+      <p>18th-century English shipwreck with cannon, accessible directly from the Le Dune Piscinas beach. Rich aquatic flora and fauna. Hotel-arranged dives guided by marine biologists.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Cala Domestica</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">Variable</span>
+        <span class="dive-tag tag-type-reef">Reef / Wall</span>
+      </div>
+      <p>Dramatic limestone cliffs and clear water along the Costa Verde coastline. Less-dived than the northeast — more of an exploration feel.</p>
+    </div>
+    <div class="dive-card">
+      <h4>Grotta Niedda (via Ajoo Dive)</h4>
+      <div class="dive-meta">
+        <span class="dive-tag tag-depth">Variable</span>
+        <span class="dive-tag tag-type-cave">Cave System</span>
+        <span class="dive-tag tag-advanced">Advanced OW</span>
+      </div>
+      <p>System of tunnels, caves, and canyons near Iglesias. Octopi, lobsters, shrimp, and corals. Operated by Ajoo Dive (PADI-affiliated), ~45 min from Le Dune Piscinas.</p>
+    </div>
+    <div class="dive-card" style="border: 2px solid var(--teal); background: #f0fdfa;">
+      <h4>Operator: Hotel Le Dune + Ajoo Dive</h4>
+      <div class="dive-meta">
+        <span class="dive-tag" style="background:#16a34a">Costa Verde</span>
+      </div>
+      <p><strong>Le Dune arranges beach dives directly.</strong> For cave diving and advanced sites, Ajoo Dive in Iglesias (~45 min) is the go-to PADI center. The west coast is wilder and less dived — the diving is a bonus here, not the main event.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HOTELS SECTION ═══════════════ -->
+<div id="hotels" class="section">
+  <h2>Hotels</h2>
+  <p class="section-desc">Northeast luxury for diving first, then a rustic/adventurous finish on the Costa Verde near Cagliari for easy departure.</p>
+
+  <h3 style="margin-bottom: 16px; font-size: 18px;">Part 1: Northeast Luxury & Diving (2–3 nights) — Choose your base</h3>
+  <div class="hotel-grid" id="hotel-grid-ne">
+    <!-- Baglioni -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-tavolara">TAVOLARA PICK</div>
+        <h4>Baglioni Resort Sardinia</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Lu Impostu, San Teodoro</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Opened 2021. 78 suites, Michelin-starred dining, full spa. Inside the Tavolara Marine Protected Area. LHW + Amex FHR.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Palau (Maddalena)</span><span class="hotel-stat-value">70 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Porto San Paolo (Tavolara)</span><span class="hotel-stat-value" style="color:var(--teal);font-weight:700;">10 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Olbia airport</span><span class="hotel-stat-value">25 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Dining</span><span class="hotel-stat-value">Michelin-starred</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Loyalty</span><span class="hotel-stat-value">LHW · Amex FHR</span></div>
+        <div class="hotel-price">€700–1,500<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.baglionihotels.com/resort-sardinia/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+    <!-- Capo d'Orso -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-maddalena">MADDALENA PICK</div>
+        <h4>Hotel Capo d'Orso Thalasso & Spa</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Cala Capra, Palau</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">LHW member. Thalassotherapy spa, two restaurants (Gambero Rosso listed). Overlooks the entire Maddalena Archipelago. Renovated 2025.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Palau (Maddalena)</span><span class="hotel-stat-value" style="color:var(--teal);font-weight:700;">5 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Porto San Paolo (Tavolara)</span><span class="hotel-stat-value">55 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Olbia airport</span><span class="hotel-stat-value">40 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Dining</span><span class="hotel-stat-value">Gambero Rosso listed</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Loyalty</span><span class="hotel-stat-value">Leading Hotels</span></div>
+        <div class="hotel-price">€600–1,200<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.hotelcapodorso.com/en/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+    <!-- Cala di Volpe -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-iconic">ICONIC</div>
+        <h4>Hotel Cala di Volpe</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Porto Cervo, Costa Smeralda</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">The iconic Costa Smeralda flagship. 121 rooms, 3 restaurants, D&G pool design, full spa. Marriott Luxury Collection.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Palau (Maddalena)</span><span class="hotel-stat-value">35 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Porto San Paolo (Tavolara)</span><span class="hotel-stat-value">35 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Olbia airport</span><span class="hotel-stat-value">25 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Dining</span><span class="hotel-stat-value">3 restaurants</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Loyalty</span><span class="hotel-stat-value">Marriott / Bonvoy</span></div>
+        <div class="hotel-price">€1,500–3,000+<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.marriott.com/en-us/hotels/olblc-hotel-cala-di-volpe-a-luxury-collection-hotel-costa-smeralda/overview/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+    <!-- 7Pines -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-value">BEST VALUE</div>
+        <h4>7Pines Resort Sardinia</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Baia Sardinia, Costa Smeralda</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Destination by Hyatt. 76 rooms, on-site diving program, modern Mediterranean design. Excellent reviews (9.5). Opened 2023.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Palau (Maddalena)</span><span class="hotel-stat-value">25 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Porto San Paolo (Tavolara)</span><span class="hotel-stat-value">40 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Olbia airport</span><span class="hotel-stat-value">30 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Dining</span><span class="hotel-stat-value">Multiple venues</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Loyalty</span><span class="hotel-stat-value">Hyatt</span></div>
+        <div class="hotel-price">€800–1,300<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.hyatt.com/destination-by-hyatt/en-US/sardh-7-pines-resort-sardinia" target="_blank">Visit website →</a>
+      </div>
+    </div>
+    <!-- Pitrizza -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <h4>Hotel Pitrizza</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Porto Cervo, Costa Smeralda</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Only 16 private villas, many with pools. Luigi Vietti design (1963). The intimate, ultra-exclusive sibling to Cala di Volpe. Verify reno status.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Palau (Maddalena)</span><span class="hotel-stat-value">35 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Porto San Paolo (Tavolara)</span><span class="hotel-stat-value">35 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Olbia airport</span><span class="hotel-stat-value">30 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Dining</span><span class="hotel-stat-value">1 restaurant</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Loyalty</span><span class="hotel-stat-value">Marriott / Bonvoy</span></div>
+        <div class="hotel-price">€1,500–3,500+<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.marriott.com/en-us/hotels/olbpl-hotel-pitrizza-a-luxury-collection-hotel-costa-smeralda/overview/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 48px; margin-bottom: 16px; font-size: 18px;">Part 2: Rustic & Adventurous (3–4 nights) — Southwest Sardinia</h3>
+  <div class="info-callout">
+    <strong>Why end here?</strong> Reversing the itinerary (NE first → SW last) puts the diving at the front when you're freshest, and positions the family near Cagliari for Martine's direct Ryanair flight to Malta. Jamie can fly to London from Cagliari with a connection, or drive back to Olbia (3 hrs) for the BA direct.
+  </div>
+  <div class="hotel-grid">
+    <!-- Le Dune -->
+    <div class="hotel-card" style="grid-column: 1 / -1; max-width: 740px;">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-confirmed">LEAD OPTION</div>
+        <h4>Hotel Le Dune Piscinas</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Costa Verde, Arbus — Southwest Sardinia</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Converted 19th-century mining warehouse on an 11-mile deserted beach. Europe's tallest sand dunes (UNESCO). 28 rooms, 3 restaurants (including gourmet Rossotramonto), spa, open-air cinema with wireless headphones. Scuba diving arranged from the beach — 18th-century English shipwreck with cannon. Wild, remote, genuinely off the beaten path.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Rooms</span><span class="hotel-stat-value">28</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Cagliari airport (CAG)</span><span class="hotel-stat-value">1.5 hrs</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ NE Sardinia</span><span class="hotel-stat-value">~3 hrs</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Diving</span><span class="hotel-stat-value">Beach dives + Ajoo Dive (45 min)</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Dining</span><span class="hotel-stat-value">3 restaurants (incl. gourmet)</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Loyalty</span><span class="hotel-stat-value">Independent</span></div>
+        <div class="hotel-price">€275–450<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.ledunepiscinas.com/en/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 32px; margin-bottom: 16px; font-size: 16px; color: var(--text-muted);">Alternatives to Le Dune Piscinas</h3>
+  <div class="hotel-grid">
+    <!-- Faro Capo Spartivento -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-alternative">ALTERNATIVE</div>
+        <h4>Faro Capo Spartivento</h4>
+        <div class="hotel-stars">★★★★★</div>
+        <div class="hotel-loc">Chia, Southern Sardinia</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Italy's only hotel inside a working lighthouse (built 1856). 6 suites + 2 apartments. Infinity pool, 3000sqm garden with centuries-old olive tree, crystal gazebos for private dining. Ultra-romantic and exclusive. ~1 hr from Cagliari.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Rooms</span><span class="hotel-stat-value">8 (very small)</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Cagliari airport</span><span class="hotel-stat-value">1 hr</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Diving</span><span class="hotel-stat-value">Limited — not a dive location</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Character</span><span class="hotel-stat-value">Romantic lighthouse, secluded</span></div>
+        <div class="hotel-price">€700–1,500<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.farocapospartivento.com/en/hotel/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+    <!-- Su Gologone -->
+    <div class="hotel-card">
+      <div class="hotel-card-header">
+        <div class="hotel-badge badge-alternative">ALTERNATIVE</div>
+        <h4>Su Gologone Experience Hotel</h4>
+        <div class="hotel-stars">★★★★</div>
+        <div class="hotel-loc">Oliena, Barbagia (interior)</div>
+      </div>
+      <div class="hotel-card-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Whitewashed mountain retreat in the Supramonte foothills. 71 rooms. Spring-fed pool, renowned Sardinian cuisine, art exhibitions, cooking classes. Gateway to Gorroppu Canyon and Cala Gonone. Deep Sardinian culture immersion.</p>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Rooms</span><span class="hotel-stat-value">71</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Cagliari airport</span><span class="hotel-stat-value">2.5 hrs</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">→ Cala Gonone (diving)</span><span class="hotel-stat-value">30 min</span></div>
+        <div class="hotel-stat-row"><span class="hotel-stat-label">Character</span><span class="hotel-stat-value">Mountain/cultural immersion</span></div>
+        <div class="hotel-price">€250–500<span>/night July est.</span></div>
+        <a class="hotel-link" href="https://www.sugologone.it/en/" target="_blank">Visit website →</a>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px; color:var(--text-muted); margin-top:16px; max-width:800px;"><strong>Why Le Dune is the lead:</strong> Faro Capo Spartivento is stunning but very small (8 rooms) and not a dive destination. Su Gologone offers incredible cultural depth and is near Cala Gonone diving, but the drive to Cagliari is longer and it's inland — no beach. Le Dune uniquely combines a wild beachfront setting, on-site diving, family activities, and reasonable Cagliari access.</p>
+</div>
+
+<!-- ═══════════════ ITINERARY SECTION ═══════════════ -->
+<div id="itinerary" class="section section-alt">
+  <h2>Itinerary Builder</h2>
+  <p class="section-desc">Reversed flow: fly into Olbia, dive the northeast first, then drive to Costa Verde and depart from Cagliari. Select your hotel to see the full plan.</p>
+
+  <div class="info-callout">
+    <strong>Why this order?</strong> Starting in the northeast means: (1) you dive when freshest after travel, (2) the new Delta JFK→OLB nonstop works perfectly for arrival, (3) you end near Cagliari for Martine + kids' direct Ryanair to Malta, and (4) Le Dune is a relaxed, wind-down finish rather than a rushed start.
+  </div>
+
+  <div class="itin-controls">
+    <label>Northeast Hotel:</label>
+    <select class="itin-select" id="hotel-select" onchange="updateItinerary()">
+      <option value="baglioni">Baglioni Resort (Tavolara diving)</option>
+      <option value="capodorso">Capo d'Orso (Maddalena diving)</option>
+      <option value="caladivolpe">Cala di Volpe (iconic Costa Smeralda)</option>
+      <option value="7pines">7Pines Resort (best value)</option>
+    </select>
+    <label style="margin-left:16px;">Nights:</label>
+    <select class="itin-select" id="nights-select" onchange="updateItinerary()" style="min-width:120px;">
+      <option value="6">6 nights</option>
+      <option value="5">5 nights</option>
+    </select>
+  </div>
+
+  <div class="itin-overview" id="itin-overview"></div>
+
+  <div class="day-timeline" id="day-timeline"></div>
+
+  <div class="itin-map-wrapper">
+    <div id="itin-map"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ FLIGHTS SECTION ═══════════════ -->
+<div id="flights" class="section">
+  <h2>Flights & Logistics</h2>
+  <p class="section-desc">Getting there, getting around, and splitting up at the end.</p>
+
+  <h3 style="margin-bottom:8px; font-size:16px;">Boston → Olbia (Arrival)</h3>
+  <table class="flights-table">
+    <thead><tr><th>Route</th><th>Airlines</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>BOS → JFK → OLB</td><td>Delta</td><td><strong>New JFK–OLB nonstop launching May 2026</strong> (4x/week, 767-300ER). Connect via Delta Shuttle or Acela.</td></tr>
+      <tr><td>BOS → FCO → OLB</td><td>ITA Airways</td><td>Connect through Rome Fiumicino. Multiple daily options.</td></tr>
+      <tr><td>BOS → ZRH → OLB</td><td>SWISS</td><td>Reliable hub connection through Zurich.</td></tr>
+      <tr><td>BOS → LHR → OLB</td><td>BA</td><td>BA operates LHR–OLB 6x/week. Long connection window at Heathrow.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:32px; margin-bottom:8px; font-size:16px;">Departure: Splitting Up from Cagliari</h3>
+  <div class="info-callout">
+    <strong>Key advantage of ending in the southwest:</strong> Martine + kids get the direct Ryanair to Malta from Cagliari (1h20m, no connection). Jamie's London options are slightly less convenient from Cagliari but still workable.
+  </div>
+  <table class="flights-table">
+    <thead><tr><th>Who</th><th>Route</th><th>Airlines</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Martine + kids</td><td>CAG → MLA (Malta)</td><td>Ryanair</td><td><strong>Direct, 1h20m.</strong> Operates 2x/week — check July schedule and plan final day around it.</td></tr>
+      <tr><td>Jamie</td><td>CAG → LGW</td><td>easyJet</td><td>Direct to London Gatwick, ~2h30m. Multiple weekly.</td></tr>
+      <tr><td>Jamie</td><td>CAG → FCO → LHR</td><td>ITA + BA</td><td>Connect through Rome to Heathrow. ~4 hrs total. More options.</td></tr>
+      <tr><td>Jamie (alt)</td><td>Drive to OLB → LHR</td><td>BA</td><td>3 hr drive from Le Dune to Olbia, then BA direct to Heathrow. Best if you want Heathrow specifically.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:32px; margin-bottom:8px; font-size:16px;">Car Rental</h3>
+  <p style="font-size:14px; color:var(--text-muted); max-width:700px;">A rental car is essential. Pick up at Olbia (OLB) on arrival, drive the northeast for 2–3 days, then the ~3 hour scenic drive southwest to Costa Verde. Drop off at Cagliari (CAG) on departure. One-way Olbia→Cagliari rentals are widely available from major agencies. If Jamie departs from Olbia instead, coordinate a second car or transfer for the last day.</p>
+</div>
+
+<div style="text-align:center; padding: 32px; color:var(--text-muted); font-size:12px;">
+  Sardinia Trip Planner · Built for Jamie · March 2026<br>
+  Prices are estimates based on publicly available rates. Always confirm directly with hotels.
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const HOTELS = {
+  ledune: { name:'Hotel Le Dune Piscinas', lat:39.5570, lng:8.4570, loc:'Costa Verde', color:'#0d9488' },
+  faro: { name:'Faro Capo Spartivento', lat:38.8680, lng:8.8500, loc:'Chia', color:'#475569' },
+  sugologone: { name:'Su Gologone', lat:40.2760, lng:9.4780, loc:'Oliena', color:'#475569' },
+  baglioni: {
+    name:'Baglioni Resort', lat:40.7690, lng:9.6690, loc:'San Teodoro',
+    color:'#7c3aed', badge:'Tavolara Pick',
+    palau:'70 min', tavolara:'10 min', olbia:'25 min', price:'€700–1,500',
+    diveCluster:'tavolara', diveNote:'10 min to Tavolara Diving Center — Papa Banks, 3 wrecks, cave dives',
+  },
+  capodorso: {
+    name:'Hotel Capo d\'Orso', lat:41.1870, lng:9.3870, loc:'Palau',
+    color:'#e8614d', badge:'Maddalena Pick',
+    palau:'5 min', tavolara:'55 min', olbia:'40 min', price:'€600–1,200',
+    diveCluster:'maddalena', diveNote:'5 min to Nautilus Diving Center — Grouper City, Becu Caves, wrecks',
+  },
+  caladivolpe: {
+    name:'Hotel Cala di Volpe', lat:41.0945, lng:9.5355, loc:'Porto Cervo',
+    color:'#d4a853', badge:'Iconic',
+    palau:'35 min', tavolara:'35 min', olbia:'25 min', price:'€1,500–3,000+',
+    diveCluster:'both', diveNote:'35 min to either cluster — can dive Maddalena one day, Tavolara the next',
+  },
+  '7pines': {
+    name:'7Pines Resort', lat:41.1355, lng:9.4730, loc:'Baia Sardinia',
+    color:'#0d9488', badge:'Best Value',
+    palau:'25 min', tavolara:'40 min', olbia:'30 min', price:'€800–1,300',
+    diveCluster:'both', diveNote:'25 min to Palau, 40 min to Porto San Paolo — can reach both clusters',
+  },
+};
+
+const AIRPORTS = [
+  { name:'Olbia (OLB)', lat:40.8986, lng:9.5176 },
+  { name:'Cagliari (CAG)', lat:39.2515, lng:9.0543 },
+];
+
+const DIVE_SITES = {
+  tavolara: [
+    { name:'Secca del Papa 1', lat:40.9100, lng:9.7300 },
+    { name:'Secca del Papa 2', lat:40.9050, lng:9.7400 },
+    { name:'Relitto di Molara', lat:40.8750, lng:9.7150 },
+    { name:'Relitto Omega', lat:40.9200, lng:9.7000 },
+    { name:'Relitto Chrisso', lat:40.8600, lng:9.7300 },
+    { name:'Il Grottone', lat:40.9250, lng:9.7150 },
+  ],
+  maddalena: [
+    { name:'Lavezzi / Grouper City', lat:41.3450, lng:9.2550 },
+    { name:'Secca di Washington', lat:41.2580, lng:9.3850 },
+    { name:'Becu Caves', lat:41.2200, lng:9.4100 },
+    { name:'Clan Ogilvie wreck', lat:41.2850, lng:9.3200 },
+    { name:'Loredan wreck', lat:41.2400, lng:9.3600 },
+  ],
+  costav: [
+    { name:'Piscinas Shipwreck', lat:39.5600, lng:8.4400 },
+    { name:'Cala Domestica', lat:39.3400, lng:8.3800 },
+    { name:'Grotta Niedda', lat:39.3100, lng:8.5100 },
+  ],
+};
+
+const OPERATORS = [
+  { name:'Nautilus Diving Center', lat:41.1780, lng:9.3810, loc:'Palau' },
+  { name:'Tavolara Diving Center', lat:40.8810, lng:9.6390, loc:'Porto San Paolo' },
+  { name:'Ajoo Dive', lat:39.3000, lng:8.5700, loc:'Iglesias' },
+];
+
+// ═══════════════════════════════════════════
+// MAP ICON BUILDERS
+// ═══════════════════════════════════════════
+function iconSVG(shape, color, label) {
+  const s = 28;
+  let svg;
+  if (shape === 'square') {
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
+      <rect x="2" y="2" width="${s-4}" height="${s-4}" rx="5" fill="${color}" stroke="white" stroke-width="2"/>
+      <text x="${s/2}" y="${s/2+1}" text-anchor="middle" dominant-baseline="central"
+        fill="white" font-size="11" font-weight="700" font-family="system-ui">${label}</text>
+    </svg>`;
+  } else if (shape === 'diamond') {
+    const c = s/2;
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
+      <polygon points="${c},2 ${s-2},${c} ${c},${s-2} 2,${c}" fill="${color}" stroke="white" stroke-width="2"/>
+      <text x="${c}" y="${c+1}" text-anchor="middle" dominant-baseline="central"
+        fill="white" font-size="10" font-weight="700" font-family="system-ui">${label}</text>
+    </svg>`;
+  } else if (shape === 'triangle') {
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
+      <polygon points="${s/2},3 ${s-2},${s-3} 2,${s-3}" fill="${color}" stroke="white" stroke-width="2"/>
+    </svg>`;
+  } else { // circle
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
+      <circle cx="${s/2}" cy="${s/2}" r="${s/2-2}" fill="${color}" stroke="white" stroke-width="2"/>
+      <text x="${s/2}" y="${s/2+1}" text-anchor="middle" dominant-baseline="central"
+        fill="white" font-size="10" font-weight="700" font-family="system-ui">${label}</text>
+    </svg>`;
+  }
+  return L.divIcon({
+    className: '',
+    html: svg,
+    iconSize: [s, s],
+    iconAnchor: [s/2, s/2],
+    popupAnchor: [0, -s/2],
+  });
+}
+
+// ═══════════════════════════════════════════
+// MAIN MAP
+// ═══════════════════════════════════════════
+const mainMap = L.map('main-map').setView([40.6, 9.2], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution:'© OpenStreetMap', maxZoom:18
+}).addTo(mainMap);
+
+// Airports — dark gray diamonds with plane symbol
+AIRPORTS.forEach(a => {
+  L.marker([a.lat, a.lng], {icon: iconSVG('diamond', '#475569', '✈')}).addTo(mainMap)
+    .bindPopup(`<b>${a.name}</b><br>Airport`);
+});
+
+// Hotels — blue squares with H
+const mainHotelKeys = ['ledune','baglioni','capodorso','caladivolpe','7pines'];
+mainHotelKeys.forEach(k => {
+  const h = HOTELS[k];
+  L.marker([h.lat, h.lng], {icon: iconSVG('square', h.color || '#2c5f8a', 'H')}).addTo(mainMap)
+    .bindPopup(`<b>${h.name}</b><br>${h.loc}${h.price ? '<br>'+h.price+'/night July' : ''}`);
+});
+
+// Dive sites — triangles, colored by cluster
+const clusterColors = { tavolara:'#7c3aed', maddalena:'#e8614d', costav:'#0d9488' };
+Object.entries(DIVE_SITES).forEach(([cluster, sites]) => {
+  sites.forEach(s => {
+    L.marker([s.lat, s.lng], {icon: iconSVG('triangle', clusterColors[cluster], '')}).addTo(mainMap)
+      .bindPopup(`<b>${s.name}</b><br><span style="color:${clusterColors[cluster]}">${cluster.charAt(0).toUpperCase()+cluster.slice(1)} cluster</span>`);
+  });
+});
+
+// Operators — green circles with D
+OPERATORS.forEach(o => {
+  L.marker([o.lat, o.lng], {icon: iconSVG('circle', '#16a34a', 'D')}).addTo(mainMap)
+    .bindPopup(`<b>${o.name}</b><br>${o.loc}`);
+});
+
+// Fit bounds
+const allPts = [
+  ...mainHotelKeys.map(k=>[HOTELS[k].lat,HOTELS[k].lng]),
+  ...Object.values(DIVE_SITES).flat().map(s=>[s.lat,s.lng]),
+  ...AIRPORTS.map(a=>[a.lat,a.lng]),
+];
+mainMap.fitBounds(allPts, {padding:[30,30]});
+
+// ═══════════════════════════════════════════
+// DIVE CLUSTER TABS
+// ═══════════════════════════════════════════
+function showDiveCluster(cluster, btn) {
+  document.querySelectorAll('.dive-cluster-tab').forEach(t => {
+    t.className = 'dive-cluster-tab';
+  });
+  btn.classList.add('active-' + cluster);
+  ['tavolara','maddalena','costav'].forEach(c => {
+    document.getElementById('dive-panel-'+c).style.display = c===cluster ? 'grid' : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════
+// ITINERARY BUILDER (REVERSED: NE first → SW last)
+// ═══════════════════════════════════════════
+let itinMap;
+let itinMarkers = [];
+let itinLines = [];
+
+function initItinMap() {
+  itinMap = L.map('itin-map').setView([40.2, 9.1], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap', maxZoom:18
+  }).addTo(itinMap);
+}
+
+function clearItinMap() {
+  itinMarkers.forEach(m => itinMap.removeLayer(m));
+  itinLines.forEach(l => itinMap.removeLayer(l));
+  itinMarkers = [];
+  itinLines = [];
+}
+
+function addItinMarker(lat, lng, label, color, popup) {
+  const m = L.marker([lat, lng], {icon: iconSVG('square', color, label)}).addTo(itinMap);
+  if (popup) m.bindPopup(popup);
+  itinMarkers.push(m);
+  return m;
+}
+
+function addItinLine(points, color) {
+  const l = L.polyline(points, {color, weight:3, dashArray:'8,6', opacity:0.6}).addTo(itinMap);
+  itinLines.push(l);
+}
+
+function updateItinerary() {
+  const hotelKey = document.getElementById('hotel-select').value;
+  const numNights = parseInt(document.getElementById('nights-select').value);
+  const h = HOTELS[hotelKey];
+  const ld = HOTELS.ledune;
+
+  const neNights = 2;
+  const leduneNights = numNights - neNights;
+
+  // Overview stats
+  const overviewEl = document.getElementById('itin-overview');
+  overviewEl.innerHTML = `
+    <div class="itin-stat"><div class="stat-value">${numNights}</div><div class="stat-label">Total nights</div></div>
+    <div class="itin-stat"><div class="stat-value">${neNights}</div><div class="stat-label">Nights at ${h.name}</div></div>
+    <div class="itin-stat"><div class="stat-value">${leduneNights}</div><div class="stat-label">Nights at Le Dune</div></div>
+    <div class="itin-stat"><div class="stat-value">${h.price}</div><div class="stat-label">${h.name} /night</div></div>
+    <div class="itin-stat"><div class="stat-value">€275–450</div><div class="stat-label">Le Dune /night</div></div>
+    <div class="itin-stat"><div class="stat-value">~3 hrs</div><div class="stat-label">NE → Le Dune drive</div></div>
+  `;
+
+  // Build days — REVERSED ORDER: NE first, then Le Dune
+  const days = [];
+  const startDate = new Date(2026, 6, 6); // July 6
+  let dayNum = 0;
+
+  // Day 1: Arrive Olbia → NE Hotel
+  days.push({
+    label:'Day 1', type:'travel', hotel: h.name,
+    date: fmtDate(startDate, dayNum++),
+    activities: [
+      {text:'Arrive Olbia (OLB). Pick up rental car.', type:'travel'},
+      {text:`Drive to ${h.name}, ${h.loc} (${h.olbia} from airport).`, type:'travel'},
+      {text:'Settle in. Afternoon: explore the area or rest after travel.', type:''},
+      {text:`Evening: Dinner at ${getDiningNote(hotelKey)}.`, type:''},
+    ]
+  });
+
+  // Day 2: First dive day
+  days.push({
+    label:'Day 2', type:'dive', hotel: h.name,
+    date: fmtDate(startDate, dayNum++),
+    activities: [
+      {text: getDiveActivity(hotelKey, 'full'), type:'dive'},
+      {text:'Martine + family: ' + getFamilyActivity(hotelKey), type:''},
+      {text:'Evening: dinner and rest.', type:''},
+    ]
+  });
+
+  // Day 3: Second dive day (6-night) or transfer day (5-night)
+  if (numNights === 6) {
+    days.push({
+      label:'Day 3', type:'dive', hotel: h.name,
+      date: fmtDate(startDate, dayNum++),
+      activities: [
+        {text: getDiveActivity(hotelKey, 'day2'), type:'dive'},
+        {text:'Martine + family: ' + getFamilyActivity2(hotelKey), type:''},
+        {text:'Pack for transfer to Costa Verde tomorrow.', type:''},
+      ]
+    });
+  }
+
+  // Transfer day: NE → Le Dune
+  days.push({
+    label:`Day ${dayNum+1}`, type:'travel', hotel: 'Le Dune Piscinas',
+    date: fmtDate(startDate, dayNum++),
+    activities: [
+      {text:`Morning checkout. Scenic drive southwest to Costa Verde (~3 hrs). Stop in Nuoro or Barumini for lunch.`, type:'travel'},
+      {text:'Arrive Le Dune Piscinas. Check in.', type:'travel'},
+      {text:'Explore the dunes — Europe\'s tallest (up to 100m). Walk the deserted 11-mile beach.', type:''},
+      {text:'Evening: Dinner at Il Ginepro (traditional Sardinian).', type:''},
+    ]
+  });
+
+  // Le Dune day 1: dive + explore
+  days.push({
+    label:`Day ${dayNum+1}`, type:'dive', hotel: 'Le Dune Piscinas',
+    date: fmtDate(startDate, dayNum++),
+    activities: [
+      {text:'Jamie + Alex: Scuba from Piscinas beach — 18th-century English shipwreck dive with marine biologist guide.', type:'dive'},
+      {text:'Martine + family: Beach, dune hiking, or spa treatments.', type:''},
+      {text:'Afternoon: Kayaking or snorkeling along Costa Verde.', type:''},
+      {text:'Evening: Dinner at Rossotramonto (gourmet restaurant).', type:''},
+    ]
+  });
+
+  // Le Dune day 2: family day
+  days.push({
+    label:`Day ${dayNum+1}`, type:'', hotel: 'Le Dune Piscinas',
+    date: fmtDate(startDate, dayNum++),
+    activities: [
+      {text:'Family boat trip along the Costa Verde coastline (half-day or full-day from the beach).', type:''},
+      {text:'Explore Ingurtosu mining ruins — fascinating industrial archaeology in a ghost town.', type:''},
+      {text:'Evening: Open-air cinema on the beach (wireless headphones).', type:''},
+    ]
+  });
+
+  if (numNights === 6) {
+    // Extra Le Dune day
+    days.push({
+      label:`Day ${dayNum+1}`, type:'dive', hotel: 'Le Dune Piscinas',
+      date: fmtDate(startDate, dayNum++),
+      activities: [
+        {text:'Jamie + Alex: Optional morning dive — Ajoo Dive cave system (Grotta Niedda, ~45 min drive) or second beach dive.', type:'dive'},
+        {text:'Martine + family: Mountain biking through dunes, or spa morning.', type:''},
+        {text:'Afternoon: Free time. Final packing.', type:''},
+        {text:'Drive to Cagliari area (1.5 hrs) or depart directly tomorrow morning.', type:'travel'},
+      ]
+    });
+  }
+
+  // Final day: departures
+  days.push({
+    label:`Day ${dayNum+1}`, type:'travel', hotel: 'Departure',
+    date: fmtDate(startDate, dayNum),
+    activities: [
+      {text:'Drive to Cagliari airport (1.5 hrs from Le Dune).', type:'travel'},
+      {text:'Martine + kids: Ryanair direct to Malta (1h20m). Check schedule for departure time.', type:'travel'},
+      {text:'Jamie: easyJet to London Gatwick, or connect via Rome to Heathrow. Alt: drive to Olbia (3 hrs) for BA direct.', type:'travel'},
+    ]
+  });
+
+  // Render timeline
+  const timeline = document.getElementById('day-timeline');
+  timeline.innerHTML = days.map(d => `
+    <div class="day-block">
+      <div class="day-dot ${d.type === 'dive' ? 'dive-day' : d.type === 'travel' ? 'travel-day' : ''}">${d.label.replace('Day ','')}</div>
+      <h4>${d.label}</h4>
+      <div class="day-date">${d.date}</div>
+      <div class="day-hotel">${d.hotel === 'Departure' ? '✈ Departure Day' : '🏨 ' + d.hotel}</div>
+      <ul class="day-activities">
+        ${d.activities.map(a => `<li class="${a.type === 'dive' ? 'dive-activity' : a.type === 'travel' ? 'travel-activity' : ''}">${a.text}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+
+  // Update itinerary map — REVERSED: OLB → NE → Le Dune → CAG
+  clearItinMap();
+  // OLB airport (arrival)
+  addItinMarker(40.8986, 9.5176, '✈', '#475569', '<b>Olbia Airport (OLB)</b><br>Arrival');
+  // NE Hotel
+  addItinMarker(h.lat, h.lng, '1', h.color || '#2c5f8a', `<b>${h.name}</b><br>${neNights} nights — diving`);
+  // Le Dune
+  addItinMarker(ld.lat, ld.lng, '2', '#0d9488', `<b>${ld.name}</b><br>${leduneNights} nights — beach & adventure`);
+  // CAG airport (departure)
+  addItinMarker(39.2515, 9.0543, '✈', '#475569', '<b>Cagliari Airport (CAG)</b><br>Departure — Martine→Malta, Jamie→London');
+
+  // Route lines
+  addItinLine([[40.8986, 9.5176], [h.lat, h.lng]], h.color || '#2c5f8a');
+  addItinLine([[h.lat, h.lng], [ld.lat, ld.lng]], '#0d9488');
+  addItinLine([[ld.lat, ld.lng], [39.2515, 9.0543]], '#475569');
+
+  // Relevant dive sites
+  const relevantClusters = h.diveCluster === 'both' ? ['tavolara','maddalena'] : [h.diveCluster];
+  relevantClusters.forEach(cluster => {
+    DIVE_SITES[cluster].forEach(s => {
+      const m = L.marker([s.lat, s.lng], {icon: iconSVG('triangle', clusterColors[cluster], '')}).addTo(itinMap);
+      m.bindPopup(`<b>${s.name}</b>`);
+      itinMarkers.push(m);
+    });
+  });
+  // Costa Verde sites always shown
+  DIVE_SITES.costav.forEach(s => {
+    const m = L.marker([s.lat, s.lng], {icon: iconSVG('triangle', '#0d9488', '')}).addTo(itinMap);
+    m.bindPopup(`<b>${s.name}</b>`);
+    itinMarkers.push(m);
+  });
+
+  const pts = [[40.8986,9.5176],[39.2515,9.0543],[ld.lat,ld.lng],[h.lat,h.lng],
+    ...relevantClusters.flatMap(c => DIVE_SITES[c].map(s=>[s.lat,s.lng])),
+    ...DIVE_SITES.costav.map(s=>[s.lat,s.lng])
+  ];
+  itinMap.fitBounds(pts, {padding:[40,40]});
+}
+
+function fmtDate(start, offset) {
+  const d = new Date(start);
+  d.setDate(d.getDate() + offset);
+  return d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+}
+
+function getDiveActivity(key, time) {
+  const acts = {
+    baglioni: {
+      full: 'Jamie + Alex: Full day diving with Tavolara Diving Center (10 min) — Secca del Papa 1 + Relitto di Molara (wreck). The absolute top tier.',
+      day2: 'Jamie + Alex: Second dive day — Secca del Papa 2 (deep, Nitrox recommended) + Il Grottone cave system.',
+    },
+    capodorso: {
+      full: 'Jamie + Alex: Full day with Nautilus Diving Center (5 min) — Lavezzi / Grouper City + Becu Caves. Signature Maddalena dives.',
+      day2: 'Jamie + Alex: Second dive day — Secca di Washington (3 routes) + Loredan WWII wreck.',
+    },
+    caladivolpe: {
+      full: 'Jamie + Alex: Drive to Porto San Paolo (35 min). Dive with Tavolara Diving Center — Secca del Papa 1 + wreck.',
+      day2: 'Jamie + Alex: Drive to Palau (35 min). Dive with Nautilus — Lavezzi / Grouper City + Becu Caves.',
+    },
+    '7pines': {
+      full: 'Jamie + Alex: Drive to Palau (25 min). Dive with Nautilus — Lavezzi / Grouper City + Secca di Washington.',
+      day2: 'Jamie + Alex: Drive to Porto San Paolo (40 min). Dive with Tavolara Diving — Secca del Papa 1 + Relitto di Molara.',
+    },
+  };
+  return acts[key][time];
+}
+
+function getDiningNote(key) {
+  const notes = {
+    baglioni: 'Gusto (Michelin-starred)',
+    capodorso: 'Il Paguro (Gambero Rosso listed)',
+    caladivolpe: 'the hotel or Porto Cervo village',
+    '7pines': 'the resort restaurants or Baia Sardinia',
+  };
+  return notes[key];
+}
+
+function getFamilyActivity(key) {
+  const acts = {
+    baglioni: 'Spa (Finnish sauna, Turkish bath, treatments), beach at Lu Impostu, or boat to Tavolara island.',
+    capodorso: 'Thalassotherapy spa, pitch & putt golf, or boat excursion to Maddalena islands.',
+    caladivolpe: 'Spa, pool, private beach, or shopping in Porto Cervo village.',
+    '7pines': 'Spa, multiple pools, beachfront activities, or explore Baia Sardinia.',
+  };
+  return acts[key];
+}
+
+function getFamilyActivity2(key) {
+  const acts = {
+    baglioni: 'Beach day at Lu Impostu, or boat excursion to Tavolara island.',
+    capodorso: 'Boat to La Maddalena town — explore the charming streets and beaches.',
+    caladivolpe: 'Porto Cervo shopping and lunch, or boat to Mortorio island.',
+    '7pines': 'Snorkeling, water sports, or day trip to La Maddalena by ferry from Palau.',
+  };
+  return acts[key];
+}
+
+// ═══════════════════════════════════════════
+// NAV ACTIVE STATE
+// ═══════════════════════════════════════════
+const sections = document.querySelectorAll('[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+
+function updateActiveNav() {
+  let current = '';
+  const scrollY = window.scrollY;
+  ['map','dive-sites','hotels','itinerary','flights'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && scrollY >= el.offsetTop - 80) current = id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateActiveNav);
+
+// Smooth scroll
+navLinks.forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+initItinMap();
+updateItinerary();
+</script>
+</body>
+</html>
